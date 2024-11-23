@@ -1,4 +1,6 @@
 .env
 node_modules
-prisma/generated
-prisma/dev.db-journal
+prisma/*
+!prisma/client.ts
+!prisma/patch.ts
+!prisma/schema.prisma
