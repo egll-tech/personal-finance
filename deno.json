@@ -2,6 +2,7 @@
   "name": "@egll/personal-finance",
   "license": "AGPL-3.0-only",
   "exports": "./main.ts",
+  "workspace": ["./api", "./prisma"],
   "tasks": {
     "dev": "deno run --watch main.ts",
     "prisma": "deno run -A --unstable npm:prisma",

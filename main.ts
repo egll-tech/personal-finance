@@ -1,4 +1,4 @@
-import { prisma } from "./prisma/client.ts"
+import { prisma } from "@personal-finance/prisma"
 
 async function main() {
     const user = await prisma.counter.create({

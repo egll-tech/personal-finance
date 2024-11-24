@@ -1,0 +1,5 @@
+{
+    "name": "@personal-finance/prisma",
+    "version": "0.0.1",
+    "exports": "./client.ts"
+}

@@ -4,3 +4,4 @@ prisma/*
 !prisma/client.ts
 !prisma/patch.ts
 !prisma/schema.prisma
+!prisma/deno.json
