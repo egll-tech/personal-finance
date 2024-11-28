@@ -2,15 +2,17 @@
   "name": "@egll/personal-finance",
   "license": "AGPL-3.0-only",
   "exports": "./main.ts",
-  "workspace": ["./api", "./prisma"],
+  "workspace": ["./api", "./prisma", "./server"],
   "tasks": {
-    "dev": "deno run --watch main.ts",
+    "dev": "deno task server",
     "prisma": "deno run -A --unstable npm:prisma",
     "prisma:init": "deno task prisma migrate dev --name init",
     "prisma:generate": "deno task prisma generate --schema ./prisma/schema.prisma && deno task prisma:patch",
-    "prisma:patch": "deno run -A prisma/patch.ts"
+    "prisma:patch": "deno run -A prisma/patch.ts",
+    "server": "deno run --allow-net server/main.ts"
   },
   "imports": {
+    "@oak/oak": "jsr:@oak/oak@^17.1.3",
     "@prisma/client": "npm:@prisma/client@^5.22.0",
     "@std/assert": "jsr:@std/assert@1",
     "@std/dotenv": "jsr:@std/dotenv@^0.225.2",
