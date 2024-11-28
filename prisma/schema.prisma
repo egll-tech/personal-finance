@@ -13,23 +13,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Counter {
-  id    Int @id @default(autoincrement())
-  value Int
+model Budget {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+
+  budgetItems BudgetItem[]
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+model BudgetItem {
+  id   String @id @default(cuid())
+  name String
+  type String // Income or Expense
+
+  income  Income?
+  expense Expense?
+
+  budget   Budget @relation(fields: [budgetId], references: [id])
+  budgetId String
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
+model Income {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  status         String // Planned, Completed
+  plannedAmount  Decimal
+  actualAmount   Decimal
+  plannedPayDate DateTime
+  actualPayDate  DateTime
+
+  budgetItem   BudgetItem @relation(fields: [budgetItemId], references: [id])
+  budgetItemId String     @unique
+}
+
+model Expense {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  status          String // Pending, Initiated, Completed, Failed, Cancelled.
+  plannedAmount   Decimal
+  actualAmount    Decimal
+  dueDate         DateTime
+  initiationDate  DateTime?
+  completionDate  DateTime?
+  cancelationDate DateTime?
+
+  budgetItem   BudgetItem @relation(fields: [budgetItemId], references: [id])
+  budgetItemId String     @unique
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  Expense Expense[]
 }
