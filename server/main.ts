@@ -1,20 +1,11 @@
-import { Application } from "jsr:@oak/oak/application"
-import { Router } from "jsr:@oak/oak/router"
-
-const router = new Router()
-router.get("/", (ctx) => {
-  ctx.response.body = `<!DOCTYPE html>
-    <html>
-      <head><title>Hello oak!</title><head>
-      <body>
-        <h1>Hello oak!</h1>
-      </body>
-    </html>
-  `
-})
+import { Application } from 'jsr:@oak/oak/application'
+import budgetRoutes from './routes/BudgetRoutes.ts'
+import { errorMiddleware } from './middlewares/ErrorMiddleware.ts'
 
 const app = new Application()
-app.use(router.routes())
-app.use(router.allowedMethods())
+
+app.use(errorMiddleware)
+app.use(budgetRoutes.routes())
+app.use(budgetRoutes.allowedMethods())
 
 app.listen({ port: 8080 })
