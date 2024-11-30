@@ -1,2 +1,17 @@
-export * from "./accounts/mod.ts"
-export * from "./time/mod.ts"
+export enum BudgetItemType {
+  Income = 'income',
+  Expense = 'expense',
+}
+
+export enum IncomeStatus {
+  Planned = 'planned',
+  Completed = 'completed',
+}
+
+export enum ExpenseStatus {
+  Planned = 'planned',
+  Initiated = 'initiated',
+  Completed = 'completed',
+  Failed = 'failed',
+  Cancelled = 'cancelled',
+}
