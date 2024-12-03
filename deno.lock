@@ -26,6 +26,7 @@
     "npm:drizzle-kit@~0.28.1": "0.28.1_esbuild@0.19.12",
     "npm:drizzle-orm@~0.36.4": "0.36.4_@libsql+client@0.14.0",
     "npm:libsql@~0.5.0-pre.2": "0.5.0-pre.2",
+    "npm:nanoid@*": "5.0.9",
     "npm:nanoid@^5.0.9": "5.0.9",
     "npm:path-to-regexp@6.2.1": "6.2.1"
   },
