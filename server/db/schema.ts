@@ -1,4 +1,4 @@
-import { numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { int, numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
 /**
@@ -9,8 +9,8 @@ import { sql } from 'drizzle-orm'
 export const Budget = sqliteTable('Budget', {
   id: text().primaryKey().notNull(),
   name: text().notNull(),
-  startDate: numeric().notNull(),
-  endDate: numeric().notNull(),
+  startDate: int().notNull(),
+  endDate: int().notNull(),
 })
 
 export const BudgetItem = sqliteTable('BudgetItem', {
@@ -33,8 +33,8 @@ export const Income = sqliteTable('Income', {
     .notNull().default('planned'),
   plannedAmount: numeric().notNull(),
   actualAmount: numeric(),
-  plannedPayDate: numeric().notNull(),
-  actualPayDate: numeric(),
+  plannedPayDate: int().notNull(),
+  actualPayDate: int(),
 
   budgetItem: text().notNull().references(() => BudgetItem.id, {
     onDelete: 'cascade',
@@ -57,10 +57,10 @@ export const Expense = sqliteTable('Expense', {
     .default('planned'),
   plannedAmount: numeric().notNull(),
   actualAmount: numeric(),
-  dueDate: numeric().notNull(),
-  initiationDate: numeric(),
-  completionDate: numeric(),
-  cancelationDate: numeric(),
+  dueDate: int().notNull(),
+  initiationDate: int(),
+  completionDate: int(),
+  cancelationDate: int(),
 
   budgetItem: text().notNull().references(() => BudgetItem.id, {
     onDelete: 'cascade',
