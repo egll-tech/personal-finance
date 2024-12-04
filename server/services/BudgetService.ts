@@ -1,7 +1,36 @@
 import { BudgetSchema, db } from '../db/index.ts'
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm'
 import { generateId } from '../utils/generateId.ts'
-import {} from '@std/datetime'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
+import { z } from 'npm:zod'
+
+/**
+ * Overrides the DB schema, indicating which fields are optional for the
+ * service.
+ */
+const InsertBudgetSchemaDB = createInsertSchema(BudgetSchema, {
+  startDate: z.number().optional(),
+  endDate: z.number().optional(),
+})
+
+/**
+ * Schema from the DB. Objects should always match this.
+ */
+const SelectBudgetSchemaDB = createSelectSchema(BudgetSchema)
+
+/**
+ * Disables ID to be generated automatically.
+ */
+const InsertServiceSchema = InsertBudgetSchemaDB.omit({ id: true })
+
+/**
+ * Exports type to be used by any consumer of the service.
+ */
+export type InsertServiceSchemaType = z.TypeOf<typeof InsertServiceSchema>
+
+/**
+ * Exports type to be used by any consumer of the service.
+ */
+export type Budget = z.TypeOf<typeof SelectBudgetSchemaDB>
 
 /**
  * Retrieves all the budgets.
@@ -9,9 +38,6 @@ import {} from '@std/datetime'
 export const getBudgets = async () => {
   return await db.select().from(BudgetSchema)
 }
-
-type NewBudget = InferInsertModel<typeof BudgetSchema>
-type Budget = InferSelectModel<typeof BudgetSchema>
 
 /**
  * Creates a new budget.
@@ -23,7 +49,7 @@ type Budget = InferSelectModel<typeof BudgetSchema>
  * @param budget Object for the property to create.
  */
 export const createBudget = async (
-  budget: Omit<NewBudget, 'id'>,
+  budget: InsertServiceSchemaType,
 ): Promise<Budget> => {
   const today = new Date()
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -31,11 +57,16 @@ export const createBudget = async (
   const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
     .getTime()
 
-  const value: NewBudget = {
-    ...budget,
+  const DEFAULT: Budget = {
     id: generateId(),
-    startDate: budget.startDate ? budget.startDate : firstDayOfMonth,
-    endDate: budget.endDate ? budget.endDate : lastDayOfMonth,
+    name: '',
+    startDate: firstDayOfMonth,
+    endDate: lastDayOfMonth,
+  }
+
+  const value: Budget = {
+    ...DEFAULT,
+    ...budget,
   }
 
   const result = await db.insert(BudgetSchema).values(value).returning()

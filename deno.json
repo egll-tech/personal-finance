@@ -19,8 +19,10 @@
     "@std/path": "jsr:@std/path@^1.0.8",
     "drizzle-kit": "npm:drizzle-kit@^0.28.1",
     "drizzle-orm": "npm:drizzle-orm@^0.36.4",
+    "drizzle-zod": "npm:drizzle-zod@^0.5.1",
     "libsql": "npm:libsql@^0.5.0-pre.2",
-    "nanoid": "npm:nanoid@^5.0.9"
+    "nanoid": "npm:nanoid@^5.0.9",
+    "zod": "npm:zod@^3.23.8"
   },
   "fmt": {
     "semiColons": false,

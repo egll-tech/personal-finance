@@ -17,12 +17,8 @@ export const insertBudget = async (
     return
   }
 
-  try {
-    const body = await request.body.json()
-    const result = await createBudget(body)
-    response.status = 200
-    response.body = result
-  } catch (e) {
-    console.log(e)
-  }
+  const body = await request.body.json()
+  const result = await createBudget(body)
+  response.status = 200
+  response.body = result
 }
