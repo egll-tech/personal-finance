@@ -41,7 +41,7 @@ export const getBudgets = async () => {
 }
 
 export const getBudget = async (id: string) => {
-  return await db.query.Budget.findMany({
+  return await db.query.Budget.findFirst({
     with: {
       income: true,
       expense: true,
@@ -83,4 +83,44 @@ export const createBudget = async (
   const result = await db.insert(BudgetSchema).values(value).returning()
 
   return result[0]
+}
+
+/**
+ * Updates an existing budget.
+ * @param id The ID of the budget to update
+ * @param budget The budget properties to update
+ */
+export const updateBudget = async (
+  id: string,
+  budget: Partial<InsertBudgetSchemaType>,
+): Promise<Budget> => {
+  const result = await db
+    .update(BudgetSchema)
+    .set(budget)
+    .where(eq(BudgetSchema.id, id))
+    .returning()
+
+  return result[0]
+}
+
+/**
+ * Deletes an existing budget.
+ * @param id The ID of the budget to delete
+ * @throws Error if budget with given ID does not exist
+ */
+export const deleteBudget = async (id: string): Promise<void> => {
+  // First check if budget exists
+  const existing = await db
+    .select()
+    .from(BudgetSchema)
+    .where(eq(BudgetSchema.id, id))
+    .limit(1)
+
+  if (!existing.length) {
+    throw new Error(`Budget with ID ${id} not found`)
+  }
+
+  await db
+    .delete(BudgetSchema)
+    .where(eq(BudgetSchema.id, id))
 }

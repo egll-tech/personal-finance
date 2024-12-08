@@ -1,5 +1,13 @@
 import { assertExists, assertStrictEquals } from '@std/assert'
-import { createBudget, type InsertBudgetSchemaType } from './BudgetService.ts'
+import {
+  createBudget,
+  deleteBudget,
+  getBudgets,
+  type InsertBudgetSchemaType,
+  updateBudget,
+} from './BudgetService.ts'
+import type { Budget } from './BudgetService.ts'
+import { getBudget } from './BudgetService.ts'
 
 Deno.test({
   name: 'check DATABASE_URL is set.',
@@ -72,3 +80,54 @@ Deno.test({
   assertExists(result.id)
   assertStrictEquals(result.endDate, expectedEndDate)
 })
+
+Deno.test({
+  name: 'updates an existing budget',
+  permissions: { env: true, ffi: true },
+}, async () => {
+  // First create a budget
+  const originalName = 'original budget name'
+  const budget = await createBudget({ name: originalName })
+
+  // Update the budget
+  const updatedName = 'updated budget name'
+  const updatedStartDate = Date.now()
+  const updatedEndDate = Date.now() + 1000
+
+  const result = await updateBudget(budget.id, {
+    name: updatedName,
+    startDate: updatedStartDate,
+    endDate: updatedEndDate,
+  })
+
+  // Verify the updates
+  assertExists(result)
+  assertStrictEquals(result.id, budget.id)
+  assertStrictEquals(result.name, updatedName)
+  assertStrictEquals(result.startDate, updatedStartDate)
+  assertStrictEquals(result.endDate, updatedEndDate)
+})
+
+Deno.test({
+  name: 'can retrieve and delete all budgets',
+  permissions: { env: true, ffi: true },
+}, async (t) => {
+  let budgets: Budget[] = []
+
+  await t.step('get all the budgets', async () => {
+    budgets = await getBudgets()
+    assertExists(budgets)
+  })
+
+  await t.step('delete all budgets', async () => {
+    for (const budget of budgets) {
+      await deleteBudget(budget.id)
+    }
+  })
+
+  await t.step('verify all budgets were deleted', async () => {
+    const remainingBudgets = await getBudgets()
+    assertStrictEquals(remainingBudgets.length, 0)
+  })
+})
+
