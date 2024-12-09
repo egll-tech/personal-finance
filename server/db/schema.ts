@@ -1,5 +1,11 @@
-import { int, numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { sql } from 'drizzle-orm'
+import {
+  int,
+  numeric,
+  primaryKey,
+  sqliteTable,
+  text,
+} from 'drizzle-orm/sqlite-core'
+import { relations, sql } from 'drizzle-orm'
 
 /**
  * TODO: Research how to import `@personal-finance/api` enums. It will throw
@@ -13,17 +19,10 @@ export const Budget = sqliteTable('Budget', {
   endDate: int().notNull(),
 })
 
-export const BudgetItem = sqliteTable('BudgetItem', {
-  id: text().primaryKey().notNull(),
-  name: text().notNull(),
-  type: text({
-    enum: [
-      'expense',
-      'income',
-    ],
-  }).notNull(),
-  budget: text().references(() => Budget.id, { onDelete: 'restrict' }),
-})
+export const BudgetRelations = relations(Budget, ({ many }) => ({
+  income: many(Income),
+  expense: many(Expense),
+}))
 
 export const Income = sqliteTable('Income', {
   id: text().primaryKey().notNull(),
@@ -35,11 +34,19 @@ export const Income = sqliteTable('Income', {
   actualAmount: numeric(),
   plannedPayDate: int().notNull(),
   actualPayDate: int(),
-
-  budgetItem: text().notNull().references(() => BudgetItem.id, {
-    onDelete: 'cascade',
-  }),
+  createdAt: int().notNull(),
+  updatedAt: int().notNull(),
+  completedAt: int(),
+  budgetId: text().references(() => Budget.id, { onDelete: 'cascade' })
+    .notNull(),
 })
+
+export const IncomeRelations = relations(Income, ({ one }) => ({
+  budget: one(Budget, {
+    fields: [Income.budgetId],
+    references: [Budget.id],
+  }),
+}))
 
 export const Expense = sqliteTable('Expense', {
   id: text().primaryKey().notNull(),
@@ -62,18 +69,35 @@ export const Expense = sqliteTable('Expense', {
   completionDate: int(),
   cancelationDate: int(),
 
-  budgetItem: text().notNull().references(() => BudgetItem.id, {
-    onDelete: 'cascade',
-  }),
-
-  categories: text({ mode: 'json' })
-    .notNull()
-    .$type<string[]>()
-    .default(sql`'[]'`),
+  budgetId: text().references(() => Budget.id, { onDelete: 'cascade' })
+    .notNull(),
 })
+
+export const ExpenseRelations = relations(Expense, ({ one, many }) => ({
+  budget: one(Budget, {
+    fields: [Expense.budgetId],
+    references: [Budget.id],
+  }),
+  expenseToCategory: many(ExpenseToCategory),
+}))
 
 export const Category = sqliteTable('Category', {
   id: text().primaryKey().notNull(),
   name: text().notNull(),
   description: text(),
 })
+
+export const CategoryRelations = relations(Category, ({ many }) => ({
+  expenseToCategory: many(ExpenseToCategory),
+}))
+
+export const ExpenseToCategory = sqliteTable('ExpenseToCategory', {
+  expenseId: text().notNull().references(() => Expense.id, {
+    onDelete: 'cascade',
+  }),
+  categoryId: text().notNull().references(() => Category.id, {
+    onDelete: 'cascade',
+  }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.expenseId, table.categoryId] }),
+}))

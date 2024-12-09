@@ -7,6 +7,7 @@ import {
   updateBudget,
 } from './BudgetService.ts'
 import type { Budget } from './BudgetService.ts'
+import { createIncome, getIncome } from './IncomeService.ts'
 import { getBudget } from './BudgetService.ts'
 
 Deno.test({
@@ -131,3 +132,49 @@ Deno.test({
   })
 })
 
+Deno.test({
+  name: 'retrieving a budget includes its associated incomes',
+  permissions: { env: true, ffi: true },
+}, async () => {
+  // Create a test budget
+  const budget = await createBudget({ name: 'Budget with incomes' })
+
+  // Create some test incomes associated with this budget
+  const income1 = await createIncome({
+    budgetId: budget.id,
+    plannedAmount: '1000.00',
+    name: 'Salary',
+    plannedPayDate: Date.now(),
+  })
+  const income2 = await createIncome({
+    budgetId: budget.id,
+    plannedAmount: '500.50',
+    name: 'Side gig',
+    plannedPayDate: new Date().getTime() + (15 * 24 * 60 * 60 * 1000),
+  })
+
+  // Retrieve the budget
+  const retrievedBudget = await getBudget(budget.id)
+
+  // Verify the budget has its incomes populated
+  assertExists(retrievedBudget?.income)
+  assertStrictEquals(retrievedBudget?.income.length, 2)
+
+  // Verify the income details are correct
+  const foundIncome1 = retrievedBudget?.income.find((i) => i.id === income1.id)
+  const foundIncome2 = retrievedBudget?.income.find((i) => i.id === income2.id)
+
+  assertExists(foundIncome1)
+  assertExists(foundIncome2)
+  assertStrictEquals(foundIncome1.plannedAmount, 1000.00)
+  assertStrictEquals(foundIncome2.plannedAmount, 500.50)
+
+  // Clean up
+  await deleteBudget(budget.id) // This should cascade delete the incomes as well
+
+  const afterDeleteIncome1 = await getIncome(income1.id)
+  const afterDeleteIncome2 = await getIncome(income2.id)
+
+  assertStrictEquals(afterDeleteIncome1, undefined)
+  assertStrictEquals(afterDeleteIncome2, undefined)
+})
