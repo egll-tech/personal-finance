@@ -32,3 +32,4 @@ export const BudgetSchema = Budget
 export const IncomeSchema = Income
 export const ExpenseSchema = Expense
 export const CategorySchema = Category
+export const ExpenseToCategorySchema = ExpenseToCategory

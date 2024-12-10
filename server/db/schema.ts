@@ -5,7 +5,7 @@ import {
   sqliteTable,
   text,
 } from 'drizzle-orm/sqlite-core'
-import { relations, sql } from 'drizzle-orm'
+import { relations } from 'drizzle-orm'
 
 /**
  * TODO: Research how to import `@personal-finance/api` enums. It will throw
@@ -65,6 +65,8 @@ export const Expense = sqliteTable('Expense', {
   plannedAmount: numeric().notNull(),
   actualAmount: numeric(),
   dueDate: int().notNull(),
+  createdAt: int().notNull(),
+  updatedAt: int().notNull(),
   initiationDate: int(),
   completionDate: int(),
   cancelationDate: int(),
