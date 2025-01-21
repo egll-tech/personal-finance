@@ -1,18 +1,23 @@
 import { int, numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { BudgetSchema } from './BudgetSchema.ts'
-import { createEnumMap } from './utils/createEnumMap.ts'
+import { enumToSQLEnum } from './utils/enumToSQLEnum.ts'
 
-const _IncomeStatusValues = ['planned', 'completed'] as const
-
-export const IncomeSchemaStatus = createEnumMap(_IncomeStatusValues)
+export enum IncomeSchemaStatus {
+  PLANNED = 'planned',
+  COMPLETED = 'completed',
+}
 
 export const IncomeSchema = sqliteTable('Income', {
   id: text().primaryKey().notNull(),
   name: text().notNull(),
   description: text(),
-  status: text({ enum: _IncomeStatusValues }).notNull().default(
-    IncomeSchemaStatus.PLANNED,
-  ),
+  status: text('status', {
+    mode: 'text',
+    enum: enumToSQLEnum(IncomeSchemaStatus),
+  })
+    .notNull().default(
+      IncomeSchemaStatus.PLANNED,
+    ),
   plannedAmount: numeric().notNull(),
   actualAmount: numeric(),
   plannedPayDate: int({ mode: 'timestamp_ms' }).notNull(),
