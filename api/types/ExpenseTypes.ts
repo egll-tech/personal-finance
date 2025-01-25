@@ -41,5 +41,3 @@ export type CompletedExpenseSchemaType = z.TypeOf<
 export type CancelledExpenseSchemaType = z.TypeOf<
   typeof CancelledExpenseSchemaParser
 >
-
-export { ExpenseSchemaStatus } from '../database/mod.ts'

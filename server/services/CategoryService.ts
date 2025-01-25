@@ -1,40 +1,19 @@
-import { CategorySchema, db } from '../db/index.ts'
-import { generateId } from '../utils/generateId.ts'
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { z } from 'npm:zod'
+import {
+  CategorySchema,
+  InsertCategorySchemaParser,
+  type InsertCategorySchemaType,
+  type SelectCategorySchemaType,
+} from '@personal-finance/api'
 import { eq } from 'drizzle-orm'
-
-/**
- * Schema from the DB. Objects should always match this.
- */
-const SelectCategorySchemaDB = createSelectSchema(CategorySchema)
-
-/**
- * Exports type to be used by any consumer of the service.
- */
-export type Category = z.TypeOf<typeof SelectCategorySchemaDB>
-
-/**
- * Overrides the DB schema, indicating which fields are optional for the
- * service.
- */
-const InsertCategorySchemaDB = createInsertSchema(CategorySchema)
-
-/**
- * Disables ID to be generated automatically.
- */
-const InsertServiceSchema = InsertCategorySchemaDB.omit({ id: true })
-
-/**
- * Exports type to be used by any consumer of the service.
- */
-export type InsertCategorySchemaType = z.TypeOf<typeof InsertServiceSchema>
+import { generateId } from '../utils/generateId.ts'
+import { DatabaseService } from './DatabaseService.ts'
+import { castAsNullableString, castAsString } from '../utils/castAsString.ts'
 
 /**
  * Retrieves all categories.
  */
 export const getCategories = async () => {
-  return await db.select().from(CategorySchema)
+  return await DatabaseService.select().from(CategorySchema)
 }
 
 /**
@@ -42,7 +21,7 @@ export const getCategories = async () => {
  * @param id The ID of the category to retrieve
  */
 export const getCategory = async (id: string) => {
-  return await db.query.Category.findFirst({
+  return await DatabaseService.query.CategorySchema.findFirst({
     where: eq(CategorySchema.id, id),
   })
 }
@@ -53,19 +32,18 @@ export const getCategory = async (id: string) => {
  */
 export const createCategory = async (
   category: InsertCategorySchemaType,
-): Promise<Category> => {
-  const DEFAULT: Category = {
+): Promise<SelectCategorySchemaType> => {
+  const parsed = InsertCategorySchemaParser.parse(category)
+
+  const value = {
     id: generateId(),
-    name: '',
-    description: null,
+    name: castAsString(parsed.name),
+    description: castAsNullableString(parsed.description),
   }
 
-  const value: Category = {
-    ...DEFAULT,
-    ...category,
-  }
-
-  const result = await db.insert(CategorySchema).values(value).returning()
+  const result = await DatabaseService.insert(CategorySchema)
+    .values(value)
+    .returning()
 
   return result[0]
 }
@@ -77,11 +55,16 @@ export const createCategory = async (
  */
 export const updateCategory = async (
   id: string,
-  category: Partial<InsertCategorySchemaType>,
-): Promise<Category> => {
-  const result = await db
+  category: InsertCategorySchemaType,
+): Promise<SelectCategorySchemaType> => {
+  const updateData: { name: string; description?: string | null } = {
+    name: category.name?.toString() ?? '',
+    description: category.description?.toString() ?? null,
+  }
+
+  const result = await DatabaseService
     .update(CategorySchema)
-    .set(category)
+    .set(updateData)
     .where(eq(CategorySchema.id, id))
     .returning()
 
@@ -98,5 +81,5 @@ export const deleteCategory = async (id: string): Promise<void> => {
     throw new Error(`Category with ID ${id} not found`)
   }
 
-  await db.delete(CategorySchema).where(eq(CategorySchema.id, id))
+  await DatabaseService.delete(CategorySchema).where(eq(CategorySchema.id, id))
 }
