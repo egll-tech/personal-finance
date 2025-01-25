@@ -34,4 +34,4 @@ export type CompletedIncomeSchemaType = z.TypeOf<
 >
 export type PlannedIncomeSchemaType = z.TypeOf<typeof PlannedIncomeSchemaParser>
 
-export { IncomeSchemaStatus } from '../database/IncomeSchema.ts'
+export { IncomeSchemaStatus } from '../database/mod.ts'
