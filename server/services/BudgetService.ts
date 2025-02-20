@@ -1,47 +1,23 @@
-import { BudgetSchema, db } from '../db/index.ts'
-import { generateId } from '../utils/generateId.ts'
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { z } from 'npm:zod'
+import {
+  BudgetSchema,
+  type InsertBudgetSchemaType,
+  type SelectBudgetSchemaType,
+} from '@personal-finance/api'
 import { eq } from 'drizzle-orm'
-
-/**
- * Schema from the DB. Objects should always match this.
- */
-const SelectBudgetSchemaDB = createSelectSchema(BudgetSchema)
-
-/**
- * Exports type to be used by any consumer of the service.
- */
-export type Budget = z.TypeOf<typeof SelectBudgetSchemaDB>
-
-/**
- * Overrides the DB schema, indicating which fields are optional for the
- * service.
- */
-const InsertBudgetSchemaDB = createInsertSchema(BudgetSchema, {
-  startDate: z.number().optional(),
-  endDate: z.number().optional(),
-})
-
-/**
- * Disables ID to be generated automatically.
- */
-const InsertServiceSchema = InsertBudgetSchemaDB.omit({ id: true })
-
-/**
- * Exports type to be used by any consumer of the service.
- */
-export type InsertBudgetSchemaType = z.TypeOf<typeof InsertServiceSchema>
+import { generateId } from '../utils/generateId.ts'
+import { DatabaseService } from './DatabaseService.ts'
+import { castAsDate, castAsString } from '../utils/cast.ts'
+import { DateTime } from 'luxon'
 
 /**
  * Retrieves all the budgets.
  */
 export const getBudgets = async () => {
-  return await db.select().from(BudgetSchema)
+  return await DatabaseService.select().from(BudgetSchema)
 }
 
 export const getBudget = async (id: string) => {
-  return await db.query.Budget.findFirst({
+  return await DatabaseService.query.BudgetSchema.findFirst({
     with: {
       income: true,
       expense: true,
@@ -61,26 +37,40 @@ export const getBudget = async (id: string) => {
  */
 export const createBudget = async (
   budget: InsertBudgetSchemaType,
-): Promise<Budget> => {
-  const today = new Date()
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    .getTime()
-  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-    .getTime()
+): Promise<SelectBudgetSchemaType> => {
+  // const today = new Date()
+  // const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  //   .getTime()
+  // const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  //   .getTime()
 
-  const DEFAULT: Budget = {
-    id: generateId(),
-    name: '',
-    startDate: firstDayOfMonth,
-    endDate: lastDayOfMonth,
+  // const DEFAULT = {
+  //   id: generateId(),
+  //   name: '',
+  //   startDate: firstDayOfMonth,
+  //   endDate: lastDayOfMonth,
+  // }
+
+  // const value = {
+  //   ...DEFAULT,
+  //   ...budget,
+  // }
+
+  const value = {
+    id: castAsString(budget.id, generateId()),
+    name: castAsString(budget.name),
+    startDate: castAsDate(
+      budget.startDate,
+      DateTime.now().startOf('month').toJSDate(),
+    ),
+    endDate: castAsDate(
+      budget.endDate,
+      DateTime.now().endOf('month').toJSDate(),
+    ),
   }
 
-  const value: Budget = {
-    ...DEFAULT,
-    ...budget,
-  }
-
-  const result = await db.insert(BudgetSchema).values(value).returning()
+  const result = await DatabaseService.insert(BudgetSchema).values(value)
+    .returning()
 
   return result[0]
 }
@@ -93,10 +83,16 @@ export const createBudget = async (
 export const updateBudget = async (
   id: string,
   budget: Partial<InsertBudgetSchemaType>,
-): Promise<Budget> => {
-  const result = await db
+): Promise<SelectBudgetSchemaType> => {
+  const updateData = {
+    name: castAsString(budget.name),
+    startDate: castAsDate(budget.startDate, DateTime.now().toJSDate()),
+    endDate: castAsDate(budget.endDate, DateTime.now().toJSDate()),
+  }
+
+  const result = await DatabaseService
     .update(BudgetSchema)
-    .set(budget)
+    .set(updateData)
     .where(eq(BudgetSchema.id, id))
     .returning()
 
@@ -110,7 +106,7 @@ export const updateBudget = async (
  */
 export const deleteBudget = async (id: string): Promise<void> => {
   // First check if budget exists
-  const existing = await db
+  const existing = await DatabaseService
     .select()
     .from(BudgetSchema)
     .where(eq(BudgetSchema.id, id))
@@ -120,7 +116,7 @@ export const deleteBudget = async (id: string): Promise<void> => {
     throw new Error(`Budget with ID ${id} not found`)
   }
 
-  await db
+  await DatabaseService
     .delete(BudgetSchema)
     .where(eq(BudgetSchema.id, id))
 }

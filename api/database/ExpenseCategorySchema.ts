@@ -9,6 +9,6 @@ export const ExpenseToCategorySchema = sqliteTable('ExpenseToCategory', {
   categoryId: text().notNull().references(() => CategorySchema.id, {
     onDelete: 'cascade',
   }),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.expenseId, table.categoryId] }),
-}))
+}, (table) => [
+  primaryKey({ columns: [table.expenseId, table.categoryId] }),
+])
