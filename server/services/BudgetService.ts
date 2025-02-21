@@ -38,24 +38,6 @@ export const getBudget = async (id: string) => {
 export const createBudget = async (
   budget: InsertBudgetSchemaType,
 ): Promise<SelectBudgetSchemaType> => {
-  // const today = new Date()
-  // const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-  //   .getTime()
-  // const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-  //   .getTime()
-
-  // const DEFAULT = {
-  //   id: generateId(),
-  //   name: '',
-  //   startDate: firstDayOfMonth,
-  //   endDate: lastDayOfMonth,
-  // }
-
-  // const value = {
-  //   ...DEFAULT,
-  //   ...budget,
-  // }
-
   const value = {
     id: castAsString(budget.id, generateId()),
     name: castAsString(budget.name),
