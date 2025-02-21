@@ -7,7 +7,7 @@ import {
 import { eq } from 'drizzle-orm'
 import { generateId } from '../utils/generateId.ts'
 import { DatabaseService } from './DatabaseService.ts'
-import { castAsNullableString, castAsString } from '../utils/castAsString.ts'
+import { castAsNullableString, castAsString } from '../utils/cast.ts'
 
 /**
  * Retrieves all categories.
@@ -57,9 +57,9 @@ export const updateCategory = async (
   id: string,
   category: InsertCategorySchemaType,
 ): Promise<SelectCategorySchemaType> => {
-  const updateData: { name: string; description?: string | null } = {
-    name: category.name?.toString() ?? '',
-    description: category.description?.toString() ?? null,
+  const updateData = {
+    name: castAsString(category.name),
+    description: castAsNullableString(category.description),
   }
 
   const result = await DatabaseService
