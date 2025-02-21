@@ -14,6 +14,7 @@ import {
 } from '../utils/cast.ts'
 import { generateId } from '../utils/generateId.ts'
 import { DatabaseService } from './DatabaseService.ts'
+import { DateTime } from 'luxon'
 
 export const createIncome = async (income: InsertIncomeSchemaType) => {
   const value = {
@@ -53,6 +54,8 @@ export const updateIncome = async (
   id: string,
   income: Partial<InsertIncomeSchemaType>,
 ): Promise<SelectIncomeSchemaType> => {
+  const now = DateTime.now().toJSDate()
+
   const updateData = {
     name: castAsString(income.name),
     description: castAsNullableString(income.description),
@@ -63,11 +66,10 @@ export const updateIncome = async (
     plannedAmount: castAsString(income.plannedAmount),
     actualAmount: castAsNullableString(income.actualAmount),
     plannedPayDate: castAsDate(income.plannedPayDate),
-    updatedAt: castAsDate(income.updatedAt),
+    updatedAt: now,
     completedAt: castAsNullableDate(income.completedAt),
     actualPayDate: castAsNullableDate(income.actualPayDate),
     createdAt: castAsDate(income.createdAt),
-    budgetId: castAsString(income.budgetId),
   }
 
   const result = await DatabaseService
