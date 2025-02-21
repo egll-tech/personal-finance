@@ -1,4 +1,13 @@
-import { assertEquals, assertExists, assertStrictEquals } from '@std/assert'
+import {
+  ExpenseSchemaStatus,
+  ExpenseToCategorySchema,
+} from '@personal-finance/api'
+import { assertExists, assertStrictEquals } from '@std/assert'
+import { eq } from 'drizzle-orm'
+import { DateTime } from 'luxon'
+import { createBudget } from './BudgetService.ts'
+import { createCategory } from './CategoryService.ts'
+import { DatabaseService } from './DatabaseService.ts'
 import {
   createExpense,
   deleteExpense,
@@ -8,12 +17,6 @@ import {
   untagExpenseFromCategory,
   updateExpense,
 } from './ExpenseService.ts'
-import { ExpenseStatus } from '@personal-finance/api'
-import { db, ExpenseToCategorySchema } from '../db/index.ts'
-import { eq } from 'drizzle-orm'
-import { createBudget } from './BudgetService.ts'
-import { createCategory } from './CategoryService.ts'
-
 let createdExpense: Awaited<ReturnType<typeof createExpense>>
 
 Deno.test({
@@ -34,8 +37,8 @@ Deno.test({
       description,
       budgetId: budget.id,
       plannedAmount,
-      status: ExpenseStatus.Planned,
-      dueDate: Date.now(),
+      status: ExpenseSchemaStatus.PLANNED,
+      dueDate: DateTime.now().toJSDate(),
     })
 
     assertExists(createdExpense)
@@ -77,7 +80,9 @@ Deno.test({
   await t.step('tag expense with category', async () => {
     await tagExpenseWithCategory(createdExpense!.id, category.id)
 
-    const association = await db.select().from(ExpenseToCategorySchema).where(
+    const association = await DatabaseService.select().from(
+      ExpenseToCategorySchema,
+    ).where(
       eq(ExpenseToCategorySchema.expenseId, createdExpense!.id),
     )
 
@@ -88,7 +93,9 @@ Deno.test({
   await t.step('untag expense from category', async () => {
     await untagExpenseFromCategory(createdExpense!.id, category.id)
 
-    const association = await db.select().from(ExpenseToCategorySchema).where(
+    const association = await DatabaseService.select().from(
+      ExpenseToCategorySchema,
+    ).where(
       eq(ExpenseToCategorySchema.expenseId, createdExpense!.id),
     )
 

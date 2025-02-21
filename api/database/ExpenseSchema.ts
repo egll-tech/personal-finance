@@ -20,12 +20,12 @@ export const ExpenseSchema = sqliteTable('Expense', {
   }),
   plannedAmount: numeric().notNull(),
   actualAmount: numeric(),
-  dueDate: int().notNull(),
-  createdAt: int().notNull(),
-  updatedAt: int().notNull(),
-  initiationDate: int(),
-  completionDate: int(),
-  cancelationDate: int(),
+  dueDate: int({ mode: 'timestamp_ms' }).notNull(),
+  createdAt: int({ mode: 'timestamp_ms' }).notNull(),
+  updatedAt: int({ mode: 'timestamp_ms' }).notNull(),
+  initiationDate: int({ mode: 'timestamp_ms' }),
+  completionDate: int({ mode: 'timestamp_ms' }),
+  cancelationDate: int({ mode: 'timestamp_ms' }),
 
   budgetId: text().references(() => BudgetSchema.id, { onDelete: 'cascade' })
     .notNull(),

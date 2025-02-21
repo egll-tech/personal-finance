@@ -8,6 +8,7 @@ export type SelectExpenseSchemaType = typeof ExpenseSchema.$inferSelect
 export const InsertExpenseSchemaParser = createInsertSchema(ExpenseSchema, {
   id: z.string().optional(),
   createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 })
 
 export const InitiatedExpenseSchemaParser = createUpdateSchema(ExpenseSchema, {

@@ -1,58 +1,52 @@
-import { db, ExpenseSchema, ExpenseToCategorySchema } from '../db/index.ts'
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { z } from 'npm:zod'
-import { generateId } from '../utils/generateId.ts'
-import { ExpenseStatus } from '@personal-finance/api'
+import {
+  ExpenseSchema,
+  ExpenseSchemaStatus,
+  ExpenseToCategorySchema,
+  type InsertExpenseSchemaType,
+  SelectExpenseSchemaType,
+} from '@personal-finance/api'
 import { and, eq } from 'drizzle-orm'
-
-const SelectExpenseSchemaDB = createSelectSchema(ExpenseSchema)
-
-export type Expense = z.TypeOf<typeof SelectExpenseSchemaDB>
-
-const InsertExpenseSchemaDB = createInsertSchema(ExpenseSchema, {
-  createdAt: z.number().optional(),
-  updatedAt: z.number().optional(),
-})
-
-const InsertServiceSchema = InsertExpenseSchemaDB.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-})
-
-export type InsertExpenseSchemaType = z.TypeOf<typeof InsertServiceSchema>
+import { DateTime } from 'luxon'
+import {
+  cast,
+  castAsDate,
+  castAsNullableDate,
+  castAsNullableString,
+  castAsString,
+} from '../utils/cast.ts'
+import { generateId } from '../utils/generateId.ts'
+import { DatabaseService } from './DatabaseService.ts'
 
 export const createExpense = async (expense: InsertExpenseSchemaType) => {
-  const now = Date.now()
-  const DEFAULT: Expense = {
-    id: generateId(),
-    name: '',
-    description: null,
-    status: ExpenseStatus.Planned,
-    plannedAmount: '0.0',
-    actualAmount: null,
-    dueDate: now,
-    createdAt: now,
-    updatedAt: now,
-    initiationDate: null,
-    cancelationDate: null,
-    completionDate: null,
+  const now = DateTime.now().toJSDate()
 
-    budgetId: expense.budgetId,
+  const value = {
+    id: castAsString(expense.id, generateId()),
+    name: castAsString(expense.name),
+    description: castAsNullableString(expense.description),
+    status: cast<ExpenseSchemaStatus, ExpenseSchemaStatus>(
+      expense.status,
+      ExpenseSchemaStatus.PLANNED,
+    ),
+    plannedAmount: castAsString(expense.plannedAmount),
+    actualAmount: castAsNullableString(expense.actualAmount),
+    dueDate: castAsDate(expense.dueDate, now),
+    createdAt: castAsDate(expense.createdAt, now),
+    updatedAt: castAsDate(expense.updatedAt, now),
+    initiationDate: castAsNullableDate(expense.initiationDate),
+    cancelationDate: castAsNullableDate(expense.cancelationDate),
+    completionDate: castAsNullableDate(expense.completionDate),
+    budgetId: castAsString(expense.budgetId),
   }
 
-  const input: Expense = {
-    ...DEFAULT,
-    ...expense,
-  }
-
-  const result = await db.insert(ExpenseSchema).values(input).returning()
+  const result = await DatabaseService.insert(ExpenseSchema).values(value)
+    .returning()
 
   return result[0]
 }
 
 export const getExpenses = async () => {
-  return await db.select().from(ExpenseSchema)
+  return await DatabaseService.select().from(ExpenseSchema)
 }
 
 /**
@@ -63,10 +57,28 @@ export const getExpenses = async () => {
 export const updateExpense = async (
   id: string,
   expense: Partial<InsertExpenseSchemaType>,
-): Promise<Expense> => {
-  const result = await db
-    .update(ExpenseSchema)
-    .set(expense)
+): Promise<SelectExpenseSchemaType> => {
+  const now = DateTime.now().toJSDate()
+
+  const updateData = {
+    name: castAsString(expense.name),
+    description: castAsNullableString(expense.description),
+    status: cast<ExpenseSchemaStatus, ExpenseSchemaStatus>(
+      expense.status,
+      ExpenseSchemaStatus.PLANNED,
+    ),
+    plannedAmount: castAsString(expense.plannedAmount),
+    actualAmount: castAsNullableString(expense.actualAmount),
+    dueDate: castAsDate(expense.dueDate, now),
+    createdAt: castAsDate(expense.createdAt, now),
+    updatedAt: now,
+    initiationDate: castAsNullableDate(expense.initiationDate),
+    cancelationDate: castAsNullableDate(expense.cancelationDate),
+    completionDate: castAsNullableDate(expense.completionDate),
+  }
+
+  const result = await DatabaseService.update(ExpenseSchema)
+    .set(updateData)
     .where(eq(ExpenseSchema.id, id))
     .returning()
 
@@ -78,7 +90,7 @@ export const updateExpense = async (
  * @param id The ID of the expense to retrieve
  */
 export const getExpense = async (id: string) => {
-  return await db.query.Expense.findFirst({
+  return await DatabaseService.query.ExpenseSchema.findFirst({
     where: eq(ExpenseSchema.id, id),
   })
 }
@@ -93,7 +105,7 @@ export const deleteExpense = async (id: string): Promise<void> => {
     throw new Error(`Expense with ID ${id} not found`)
   }
 
-  await db.delete(ExpenseSchema).where(eq(ExpenseSchema.id, id))
+  await DatabaseService.delete(ExpenseSchema).where(eq(ExpenseSchema.id, id))
 }
 
 /**
@@ -110,7 +122,7 @@ export const tagExpenseWithCategory = async (
     throw new Error(`Expense with ID ${expenseId} not found`)
   }
 
-  await db.insert(ExpenseToCategorySchema).values({
+  await DatabaseService.insert(ExpenseToCategorySchema).values({
     expenseId,
     categoryId,
   })
@@ -130,7 +142,7 @@ export const untagExpenseFromCategory = async (
     throw new Error(`Expense with ID ${expenseId} not found`)
   }
 
-  await db.delete(ExpenseToCategorySchema)
+  await DatabaseService.delete(ExpenseToCategorySchema)
     .where(
       and(
         eq(ExpenseToCategorySchema.expenseId, expenseId),
