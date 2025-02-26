@@ -1,23 +1,23 @@
 import {
+  ExpenseSchemaStatus,
+  type InsertBudgetSchemaType,
+  type SelectBudgetSchemaType,
+} from '@personal-finance/api'
+import {
   assertAlmostEquals,
   assertExists,
   assertStrictEquals,
 } from '@std/assert'
+import { DateTime } from 'luxon'
 import {
   createBudget,
   deleteBudget,
+  getBudget,
   getBudgets,
   updateBudget,
 } from './BudgetService.ts'
+import { createExpense, getExpense } from './ExpenseService.ts'
 import { createIncome, getIncome } from './IncomeService.ts'
-import { getBudget } from './BudgetService.ts'
-// import { createExpense, getExpense } from './ExpenseService.ts'
-import {
-  ExpenseStatus,
-  type InsertBudgetSchemaType,
-  SelectBudgetSchemaType,
-} from '@personal-finance/api'
-import { DateTime } from 'luxon'
 
 Deno.test({
   name: 'check DATABASE_URL is set.',
@@ -209,54 +209,52 @@ Deno.test({
   // Create a test budget
   const budget = await createBudget({ name: 'Budget with expenses' })
 
-  //   // Create some test expenses associated with this budget
-  //   const expense1 = await createExpense({
-  //     budgetId: budget.id,
-  //     plannedAmount: '750.00',
-  //     name: 'Rent',
-  //     description: 'Monthly rent payment',
-  //     status: ExpenseStatus.Planned,
-  //     dueDate: Date.now(),
-  //   })
-  //   const expense2 = await createExpense({
-  //     budgetId: budget.id,
-  //     plannedAmount: '100.00',
-  //     name: 'Utilities',
-  //     description: 'Monthly utilities',
-  //     status: ExpenseStatus.Planned,
-  //     dueDate: new Date().getTime() + (15 * 24 * 60 * 60 * 1000),
-  //   })
+  // Create some test expenses associated with this budget
+  const expense1 = await createExpense({
+    budgetId: budget.id,
+    plannedAmount: '750.00',
+    name: 'Rent',
+    description: 'Monthly rent payment',
+    dueDate: DateTime.now().toJSDate(),
+  })
+  const expense2 = await createExpense({
+    budgetId: budget.id,
+    plannedAmount: '100.00',
+    name: 'Utilities',
+    description: 'Monthly utilities',
+    dueDate: DateTime.now().plus({ days: 15 }).toJSDate(),
+  })
 
-  //   // Retrieve the budget
-  //   const retrievedBudget = await getBudget(budget.id)
+  // Retrieve the budget
+  const retrievedBudget = await getBudget(budget.id)
 
-  //   // Verify the budget has its expenses populated
-  //   assertExists(retrievedBudget?.expense)
-  //   assertStrictEquals(retrievedBudget?.expense.length, 2)
+  // Verify the budget has its expenses populated
+  assertExists(retrievedBudget?.expense)
+  assertStrictEquals(retrievedBudget?.expense.length, 2)
 
-  //   // Verify the expense details are correct
-  //   const foundExpense1 = retrievedBudget?.expense.find((e) =>
-  //     e.id === expense1.id
-  //   )
-  //   const foundExpense2 = retrievedBudget?.expense.find((e) =>
-  //     e.id === expense2.id
-  //   )
+  // Verify the expense details are correct
+  const foundExpense1 = retrievedBudget?.expense.find((e) =>
+    e.id === expense1.id
+  )
+  const foundExpense2 = retrievedBudget?.expense.find((e) =>
+    e.id === expense2.id
+  )
 
-  //   assertExists(foundExpense1)
-  //   assertExists(foundExpense2)
-  //   assertStrictEquals(foundExpense1.plannedAmount, 750.00)
-  //   assertStrictEquals(foundExpense2.plannedAmount, 100.00)
-  //   assertStrictEquals(foundExpense1.name, 'Rent')
-  //   assertStrictEquals(foundExpense2.name, 'Utilities')
+  assertExists(foundExpense1)
+  assertExists(foundExpense2)
+  assertStrictEquals(foundExpense1.plannedAmount, 750.00)
+  assertStrictEquals(foundExpense2.plannedAmount, 100.00)
+  assertStrictEquals(foundExpense1.name, 'Rent')
+  assertStrictEquals(foundExpense2.name, 'Utilities')
 
   // Clean up
   await deleteBudget(budget.id) // This should cascade delete the expenses as well
 
-  //   const afterDeleteExpense1 = await getExpense(expense1.id)
-  //   const afterDeleteExpense2 = await getExpense(expense2.id)
+  const afterDeleteExpense1 = await getExpense(expense1.id)
+  const afterDeleteExpense2 = await getExpense(expense2.id)
 
-  //   assertStrictEquals(afterDeleteExpense1, undefined)
-  //   assertStrictEquals(afterDeleteExpense2, undefined)
+  assertStrictEquals(afterDeleteExpense1, undefined)
+  assertStrictEquals(afterDeleteExpense2, undefined)
 })
 
 Deno.test({
@@ -285,22 +283,22 @@ Deno.test({
     updatedAt: DateTime.now().toISO({ includeOffset: true }),
   })
 
-  // // Create test expense records
-  // const expense1 = await createExpense({
-  //   budgetId: budget.id,
-  //   plannedAmount: '1000.00',
-  //   name: 'Rent',
-  //   status: ExpenseStatus.Planned,
-  //   dueDate: DateTime.now().toISO({ includeOffset: true }),
-  // })
+  // Create test expense records
+  const expense1 = await createExpense({
+    budgetId: budget.id,
+    plannedAmount: '1000.00',
+    name: 'Rent',
+    status: ExpenseSchemaStatus.PLANNED,
+    dueDate: DateTime.now().toJSDate(),
+  })
 
-  // const expense2 = await createExpense({
-  //   budgetId: budget.id,
-  //   plannedAmount: '200.00',
-  //   name: 'Groceries',
-  //   status: ExpenseStatus.Planned,
-  //   dueDate: DateTime.now().toISO({ includeOffset: true }),
-  // })
+  const expense2 = await createExpense({
+    budgetId: budget.id,
+    plannedAmount: '200.00',
+    name: 'Groceries',
+    status: ExpenseSchemaStatus.PLANNED,
+    dueDate: DateTime.now().toJSDate(),
+  })
 
   // Retrieve the budget and verify relationships
   const retrievedBudget = await getBudget(budget.id)
@@ -320,23 +318,23 @@ Deno.test({
   assertStrictEquals(foundIncome1.name, 'Salary')
   assertStrictEquals(foundIncome2.name, 'Side Gig')
 
-  // // Verify expense records
-  // assertExists(retrievedBudget.expense)
-  // assertStrictEquals(retrievedBudget.expense.length, 2)
+  // Verify expense records
+  assertExists(retrievedBudget.expense)
+  assertStrictEquals(retrievedBudget.expense.length, 2)
 
-  // const foundExpense1 = retrievedBudget.expense.find((e) =>
-  //   e.id === expense1.id
-  // )
-  // const foundExpense2 = retrievedBudget.expense.find((e) =>
-  //   e.id === expense2.id
-  // )
+  const foundExpense1 = retrievedBudget.expense.find((e) =>
+    e.id === expense1.id
+  )
+  const foundExpense2 = retrievedBudget.expense.find((e) =>
+    e.id === expense2.id
+  )
 
-  // assertExists(foundExpense1)
-  // assertExists(foundExpense2)
-  // assertStrictEquals(foundExpense1.plannedAmount, 1000.00)
-  // assertStrictEquals(foundExpense2.plannedAmount, 200.00)
-  // assertStrictEquals(foundExpense1.name, 'Rent')
-  // assertStrictEquals(foundExpense2.name, 'Groceries')
+  assertExists(foundExpense1)
+  assertExists(foundExpense2)
+  assertStrictEquals(foundExpense1.plannedAmount, 1000.00)
+  assertStrictEquals(foundExpense2.plannedAmount, 200.00)
+  assertStrictEquals(foundExpense1.name, 'Rent')
+  assertStrictEquals(foundExpense2.name, 'Groceries')
 
   // Clean up
   await deleteBudget(budget.id)
@@ -344,11 +342,11 @@ Deno.test({
   // Verify cascade deletion
   const afterDeleteIncome1 = await getIncome(income1.id)
   const afterDeleteIncome2 = await getIncome(income2.id)
-  // const afterDeleteExpense1 = await getExpense(expense1.id)
-  // const afterDeleteExpense2 = await getExpense(expense2.id)
+  const afterDeleteExpense1 = await getExpense(expense1.id)
+  const afterDeleteExpense2 = await getExpense(expense2.id)
 
   assertStrictEquals(afterDeleteIncome1, undefined)
   assertStrictEquals(afterDeleteIncome2, undefined)
-  // assertStrictEquals(afterDeleteExpense1, undefined)
-  // assertStrictEquals(afterDeleteExpense2, undefined)
+  assertStrictEquals(afterDeleteExpense1, undefined)
+  assertStrictEquals(afterDeleteExpense2, undefined)
 })
