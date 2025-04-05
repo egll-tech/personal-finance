@@ -4,11 +4,14 @@ import {
   deleteIncome,
   getIncome,
   getIncomes,
-  type Income,
   updateIncome,
 } from './IncomeService.ts'
 import { createBudget } from './BudgetService.ts'
-import { IncomeStatus } from '@personal-finance/api'
+import {
+  IncomeSchemaStatus,
+  type SelectIncomeSchemaType,
+} from '@personal-finance/api'
+import { DateTime } from 'npm:luxon'
 
 Deno.test({
   name: 'can create, get, update and delete income',
@@ -17,25 +20,29 @@ Deno.test({
   // First create a budget to associate incomes with
   const budget = await createBudget({ name: 'Test Budget' })
 
-  let createdIncome: Income | undefined = undefined
+  let createdIncome: SelectIncomeSchemaType | undefined = undefined
 
   await t.step('create income', async () => {
     const plannedAmount = '1000.33'
     const name = 'Test Income'
-    const plannedPayDate = Date.now()
+    const plannedPayDate = DateTime.now().setZone('UTC').toJSDate()
 
     createdIncome = await createIncome({
       budgetId: budget.id,
       plannedAmount,
       name,
       plannedPayDate,
+      updatedAt: DateTime.now().toISO({ includeOffset: true }),
     })
 
     assertExists(createdIncome)
     assertStrictEquals(createdIncome.name, name)
     assertStrictEquals(createdIncome.plannedAmount, Number(plannedAmount))
-    assertStrictEquals(createdIncome.plannedPayDate, plannedPayDate)
-    assertStrictEquals(createdIncome.status, IncomeStatus.Planned)
+    assertStrictEquals(
+      DateTime.fromJSDate(createdIncome.plannedPayDate).toUnixInteger(),
+      DateTime.fromJSDate(plannedPayDate).toUnixInteger(),
+    )
+    assertStrictEquals(createdIncome.status, IncomeSchemaStatus.PLANNED)
     assertStrictEquals(createdIncome.budgetId, budget.id)
   })
 
@@ -48,7 +55,7 @@ Deno.test({
   await t.step('update income', async () => {
     const updatedName = 'Updated Income Name'
     const updatedAmount = '2000.69'
-    const updatedStatus = IncomeStatus.Completed
+    const updatedStatus = IncomeSchemaStatus.COMPLETED
 
     const result = await updateIncome(createdIncome!.id, {
       name: updatedName,

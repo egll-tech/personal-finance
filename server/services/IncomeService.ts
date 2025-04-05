@@ -1,52 +1,48 @@
-import { db, IncomeSchema } from '../db/index.ts'
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { z } from 'npm:zod'
-import { generateId } from '../utils/generateId.ts'
-import { IncomeStatus } from '@personal-finance/api'
+import {
+  IncomeSchema,
+  IncomeSchemaStatus,
+  type InsertIncomeSchemaType,
+  type SelectIncomeSchemaType,
+} from '@personal-finance/api'
 import { eq } from 'drizzle-orm'
-
-const SelectIncomeSchemaDB = createSelectSchema(IncomeSchema)
-
-export type Income = z.TypeOf<typeof SelectIncomeSchemaDB>
-
-const InsertIncomeSchemaDB = createInsertSchema(IncomeSchema, {
-  createdAt: z.number().optional(),
-  updatedAt: z.number().optional(),
-})
-
-const InsertServiceSchema = InsertIncomeSchemaDB.omit({ id: true })
-
-export type InsertIncomeSchemaType = z.TypeOf<typeof InsertServiceSchema>
+import {
+  cast,
+  castAsDate,
+  castAsNullableDate,
+  castAsNullableString,
+  castAsString,
+} from '../utils/cast.ts'
+import { generateId } from '../utils/generateId.ts'
+import { DatabaseService } from './DatabaseService.ts'
+import { DateTime } from 'luxon'
 
 export const createIncome = async (income: InsertIncomeSchemaType) => {
-  const now = Date.now()
-  const DEFAULT: Income = {
-    id: generateId(),
-    name: '',
-    description: null,
-    status: IncomeStatus.Planned,
-    plannedAmount: '0.0',
-    actualAmount: null,
-    plannedPayDate: now,
-    updatedAt: now,
-    completedAt: null,
-    actualPayDate: null,
-    createdAt: Date.now(),
-    budgetId: income.budgetId,
+  const value = {
+    id: castAsString(income.id, generateId()),
+    name: castAsString(income.name),
+    description: castAsNullableString(income.description),
+    status: cast<IncomeSchemaStatus, IncomeSchemaStatus>(
+      income.status,
+      IncomeSchemaStatus.PLANNED,
+    ),
+    plannedAmount: castAsString(income.plannedAmount, '0.0'),
+    actualAmount: castAsString(income.actualAmount),
+    plannedPayDate: castAsDate(income.plannedPayDate),
+    updatedAt: castAsDate(income.updatedAt),
+    completedAt: castAsNullableDate(income.completedAt),
+    actualPayDate: castAsNullableDate(income.actualPayDate),
+    createdAt: castAsDate(income.createdAt),
+    budgetId: castAsString(income.budgetId),
   }
 
-  const input: Income = {
-    ...DEFAULT,
-    ...income,
-  }
-
-  const result = await db.insert(IncomeSchema).values(input).returning()
+  const result = await DatabaseService.insert(IncomeSchema).values(value)
+    .returning()
 
   return result[0]
 }
 
 export const getIncomes = async () => {
-  return await db.select().from(IncomeSchema)
+  return await DatabaseService.select().from(IncomeSchema)
 }
 
 /**
@@ -57,10 +53,28 @@ export const getIncomes = async () => {
 export const updateIncome = async (
   id: string,
   income: Partial<InsertIncomeSchemaType>,
-): Promise<Income> => {
-  const result = await db
+): Promise<SelectIncomeSchemaType> => {
+  const now = DateTime.now().toJSDate()
+
+  const updateData = {
+    name: castAsString(income.name),
+    description: castAsNullableString(income.description),
+    status: cast<IncomeSchemaStatus, IncomeSchemaStatus>(
+      income.status,
+      IncomeSchemaStatus.PLANNED,
+    ),
+    plannedAmount: castAsString(income.plannedAmount),
+    actualAmount: castAsNullableString(income.actualAmount),
+    plannedPayDate: castAsDate(income.plannedPayDate),
+    updatedAt: now,
+    completedAt: castAsNullableDate(income.completedAt),
+    actualPayDate: castAsNullableDate(income.actualPayDate),
+    createdAt: castAsDate(income.createdAt),
+  }
+
+  const result = await DatabaseService
     .update(IncomeSchema)
-    .set(income)
+    .set(updateData)
     .where(eq(IncomeSchema.id, id))
     .returning()
 
@@ -72,7 +86,7 @@ export const updateIncome = async (
  * @param id The ID of the income to retrieve
  */
 export const getIncome = async (id: string) => {
-  return await db.query.Income.findFirst({
+  return await DatabaseService.query.IncomeSchema.findFirst({
     where: eq(IncomeSchema.id, id),
   })
 }
@@ -84,7 +98,7 @@ export const getIncome = async (id: string) => {
  */
 export const deleteIncome = async (id: string): Promise<void> => {
   // First check if income exists
-  const existing = await db
+  const existing = await DatabaseService
     .select()
     .from(IncomeSchema)
     .where(eq(IncomeSchema.id, id))
@@ -94,7 +108,7 @@ export const deleteIncome = async (id: string): Promise<void> => {
     throw new Error(`Income with ID ${id} not found`)
   }
 
-  await db
+  await DatabaseService
     .delete(IncomeSchema)
     .where(eq(IncomeSchema.id, id))
 }

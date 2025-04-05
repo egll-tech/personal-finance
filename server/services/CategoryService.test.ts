@@ -1,6 +1,6 @@
+import type { SelectCategorySchemaType } from '@personal-finance/api'
 import { assertExists, assertStrictEquals } from '@std/assert'
 import {
-  type Category,
   createCategory,
   deleteCategory,
   getCategories,
@@ -12,7 +12,7 @@ Deno.test({
   name: 'can create, get, update and delete category',
   permissions: { env: true, ffi: true },
 }, async (t) => {
-  let createdCategory: Category | undefined = undefined
+  let createdCategory: SelectCategorySchemaType | undefined = undefined
 
   await t.step('create category', async () => {
     const name = 'Test Category'
