@@ -1,3 +1,18 @@
 {
-  "unstable": ["unsafe-proto"]
+  "compilerOptions": {
+    "types": ["npm:@types/react"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "npm:react@^19.1",
+    "jsxImportSourceTypes": "npm:@types/react@^19.1"
+  },
+  "imports": {
+    "@types/node": "npm:@types/node@^20.17.30",
+    "@types/react": "npm:@types/react@^19.1.0",
+    "@types/react-dom": "npm:@types/react-dom@^19.1.1",
+    "next": "npm:next@15.1.7",
+    "postcss": "npm:postcss@^8.5.3",
+    "react": "npm:react@^19.1.0",
+    "react-dom": "npm:react-dom@^19.1.0",
+    "tailwindcss": "npm:tailwindcss@^3.4.17"
+  }
 }
