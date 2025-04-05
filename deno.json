@@ -2,13 +2,14 @@
   "name": "@egll/personal-finance",
   "license": "AGPL-3.0-only",
   "exports": "./main.ts",
-  "workspace": ["./api", "./server"],
+  "workspace": ["./api", "./server", "./apps/web"],
   "tasks": {
     "dev": "deno task server:dev",
     "drizzle-kit": "deno run -A --unstable npm:drizzle-kit",
     "drizzle-kit:test": "deno run -A --env-file=.env.test --unstable npm:drizzle-kit",
     "server": "deno run --allow-env --allow-net --allow-read --allow-ffi --env-file=.env server/main.ts",
     "server:dev": "deno run --watch --allow-env --allow-net --allow-read --allow-ffi --env-file=.env server/main.ts",
+    "web:dev": "deno task --cwd=./apps/web dev",
     "test": "deno test --env-file=.env.test --allow-env --allow-ffi"
   },
   "compilerOptions": {
@@ -23,9 +24,9 @@
     "@std/fs": "jsr:@std/fs@^1.0.9",
     "@std/path": "jsr:@std/path@^1.0.8",
     "@types/luxon": "npm:@types/luxon@^3.4.2",
-    "drizzle-kit": "npm:drizzle-kit@^0.30.1",
-    "drizzle-orm": "npm:drizzle-orm@^0.38.3",
-    "drizzle-zod": "npm:drizzle-zod@^0.6.1",
+    "drizzle-kit": "npm:drizzle-kit@^0.30.4",
+    "drizzle-orm": "npm:drizzle-orm@^0.39.3",
+    "drizzle-zod": "npm:drizzle-zod@^0.7.0",
     "libsql": "npm:libsql@^0.5.0-pre.5",
     "luxon": "npm:luxon@^3.5.0",
     "nanoid": "npm:nanoid@^5.0.9",
